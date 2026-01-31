@@ -1,0 +1,39 @@
+#!/usr/bin/expect -f
+# Test altair with real PTY to verify interactive input works
+
+set timeout 10
+
+# Test 1: Using stdin-wrapper.js
+puts "\n=== Testing with stdin-wrapper.js ==="
+spawn node stdin-wrapper.js
+expect {
+    "sim> " {
+        puts "GOT PROMPT"
+        send "help\r"
+        expect {
+            "HELP" {
+                puts "SUCCESS - Got help output"
+                send "exit\r"
+                expect eof
+            }
+            "sim> " {
+                puts "FAILURE - Got another prompt without help output"
+                send "\003"
+                expect eof
+            }
+            timeout {
+                puts "TIMEOUT - No response to help"
+                send "\003"
+                expect eof
+            }
+        }
+    }
+    timeout {
+        puts "TIMEOUT - No prompt"
+        send "\003"
+        expect eof
+    }
+}
+
+puts "\nTest complete"
+exit 0

@@ -363,6 +363,7 @@ struct sched_param sched_priority;
 if ((below_normal_above < -1) || (below_normal_above > 1))
     return SCPE_ARG;
 
+#if !defined (__EMSCRIPTEN__)
 pthread_getschedparam (pthread_self(), &sched_policy, &sched_priority);
 min_prio = sched_get_priority_min(sched_policy);
 max_prio = sched_get_priority_max(sched_policy);
@@ -378,6 +379,7 @@ switch (below_normal_above) {
         break;
     }
 pthread_setschedparam (pthread_self(), sched_policy, &sched_priority);
+#endif
 return SCPE_OK;
 }
 #endif
@@ -2297,9 +2299,11 @@ struct sched_param sched_priority;
 /* Boost Priority for this I/O thread vs the CPU instruction execution
    thread which, in general, won't be readily yielding the processor when
    this thread needs to run */
+#if !defined (__EMSCRIPTEN__)
 pthread_getschedparam (pthread_self(), &sched_policy, &sched_priority);
 ++sched_priority.sched_priority;
 pthread_setschedparam (pthread_self(), sched_policy, &sched_priority);
+#endif
 
 sim_debug (DBG_TIM, &sim_timer_dev, "_timer_thread() - starting\n");
 

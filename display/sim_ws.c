@@ -44,6 +44,13 @@
 #include "ws.h"
 #include "display.h"
 
+#ifdef __EMSCRIPTEN__
+/* Stub SDL types for Emscripten builds */
+typedef unsigned char Uint8;
+typedef unsigned short Uint16;
+typedef unsigned int Uint32;
+#endif
+
 #ifndef PIX_SIZE
 #define PIX_SIZE 1
 #endif

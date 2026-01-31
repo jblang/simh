@@ -1037,6 +1037,13 @@ struct pcap_pkthdr {
 };
 #define PCAP_ERRBUF_SIZE 256
 typedef void * pcap_t;  /* Pseudo Type to avoid compiler errors */
+typedef void * pcap_if_t;  /* Pseudo Type to avoid compiler errors */
+typedef uint32 bpf_u_int32;  /* Pseudo Type to avoid compiler errors */
+typedef void (*pcap_handler)(u_char *, const struct pcap_pkthdr *, const u_char *);
+struct bpf_program {
+    unsigned int bf_len;
+    void *bf_insns;
+};
 #define DLT_EN10MB 1    /* Dummy Value to avoid compiler errors */
 #endif /* HAVE_PCAP_NETWORK */
 

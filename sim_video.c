@@ -2898,6 +2898,16 @@ uint32 vid_map_rgb_window (VID_DISPLAY *vptr, uint8 r, uint8 g, uint8 b)
 return 0;
 }
 
+uint32 vid_map_rgba_window (VID_DISPLAY *vptr, uint8 r, uint8 g, uint8 b, uint8 a)
+{
+return 0;
+}
+
+t_stat vid_set_alpha_mode (VID_DISPLAY *vptr, int mode)
+{
+return SCPE_NOFNC;
+}
+
 void vid_draw_window (VID_DISPLAY *vptr, int32 x, int32 y, int32 w, int32 h, uint32 *buf)
 {
 return;

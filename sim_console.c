@@ -150,6 +150,10 @@
 #include <ctype.h>
 #include <math.h>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #ifdef __HAIKU__
 #define nice(n) ({})
 #endif
@@ -3828,7 +3832,9 @@ if (!sigint_message_issued) {
 #else
 runtchars.t_intrc = sim_int_char;                       /* in case changed */
 #endif
+#if !defined(__EMSCRIPTEN__)
 fcntl (0, F_SETFL, runfl);                              /* non-block mode */
+#endif
 if (ioctl (0, TIOCSETP, &runtty) < 0)
     return SCPE_TTIERR;
 if (ioctl (0, TIOCSETC, &runtchars) < 0)
@@ -3844,7 +3850,9 @@ static t_stat sim_os_ttcmd (void)
 sim_debug (DBG_TRC, &sim_con_telnet, "sim_os_ttcmd() - BSDTTY\n");
 
 sim_os_set_thread_priority (PRIORITY_NORMAL);           /* restore priority */
+#if !defined(__EMSCRIPTEN__)
 fcntl (0, F_SETFL, cmdfl);                              /* block mode */
+#endif
 if (ioctl (0, TIOCSETP, &cmdtty) < 0)
     return SCPE_TTIERR;
 if (ioctl (0, TIOCSETC, &cmdtchars) < 0)
@@ -3872,8 +3880,28 @@ unsigned char buf[1];
 sim_debug (DBG_TRC, &sim_con_telnet, "sim_os_poll_kbd() - BSDTTY\n");
 
 status = read (0, buf, 1);
+#if defined(__EMSCRIPTEN__)
+/* Emscripten's stdin NEVER blocks - read() always returns immediately.
+   We must explicitly yield to let the event loop process keyboard input. */
+if (status != 1) {
+    if (status == 0 && !isatty(0)) {
+        /* EOF on non-interactive stdin */
+        return SCPE_EXIT;
+    }
+    /* No input available - sleep to yield to event loop using inline JS.
+       This requires ASYNCIFY to actually pause execution. */
+    EM_ASM({
+        var start = Date.now();
+        Asyncify.handleSleep(function(wakeUp) {
+            setTimeout(wakeUp, 50);
+        });
+    });
+    return SCPE_OK;
+}
+#else
 if (status != 1)
     return SCPE_OK;
+#endif
 if (sim_brk_char && (buf[0] == sim_brk_char))
     return SCPE_BREAK;
 if (sim_int_char && (buf[0] == sim_int_char))

@@ -2122,9 +2122,11 @@ int io_wait_done = 0;
    Boost Priority for this response processing thread to quickly digest
    arriving data.
  */
+#if !defined (__EMSCRIPTEN__)
 pthread_getschedparam (pthread_self(), &sched_policy, &sched_priority);
 ++sched_priority.sched_priority;
 pthread_setschedparam (pthread_self(), sched_policy, &sched_priority);
+#endif
 pthread_setspecific (panel_thread_id, "reader");
 _panel_debug (p, DBG_THR, "Starting", NULL, 0);
 
@@ -2452,9 +2454,11 @@ int cmd_stat;
    Boost Priority for timer thread so it doesn't compete
    with compute bound activities.
  */
+#if !defined (__EMSCRIPTEN__)
 pthread_getschedparam (pthread_self(), &sched_policy, &sched_priority);
 ++sched_priority.sched_priority;
 pthread_setschedparam (pthread_self(), sched_policy, &sched_priority);
+#endif
 pthread_setspecific (panel_thread_id, "callback");
 _panel_debug (p, DBG_THR, "Starting", NULL, 0);
 

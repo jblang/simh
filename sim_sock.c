@@ -1207,7 +1207,8 @@ int keepalive = 1;
     defined (__APPLE__) || defined (__OpenBSD__) || \
     defined(__NetBSD__) || defined(__FreeBSD__) || \
     (defined(__hpux) && defined(_XOPEN_SOURCE_EXTENDED)) || \
-    defined (__HAIKU__) || defined(__CYGWIN__)
+    defined (__HAIKU__) || defined(__CYGWIN__) || \
+    defined (__EMSCRIPTEN__)
 socklen_t size;
 #elif defined (_WIN32) || defined (__EMX__) || \
      (defined (__ALPHA) && defined (__unix__)) || \
@@ -1269,7 +1270,8 @@ struct sockaddr_storage peername;
     defined (__APPLE__) || defined (__OpenBSD__) || \
     defined(__NetBSD__) || defined(__FreeBSD__) || \
     (defined(__hpux) && defined(_XOPEN_SOURCE_EXTENDED)) || \
-    defined (__HAIKU__) || defined(__CYGWIN__)
+    defined (__HAIKU__) || defined(__CYGWIN__) || \
+    defined (__EMSCRIPTEN__)
 socklen_t peernamesize = (socklen_t)sizeof(peername);
 #elif defined (_WIN32) || defined (__EMX__) || \
      (defined (__ALPHA) && defined (__unix__)) || \
@@ -1305,7 +1307,8 @@ static int _sim_getaddrname (struct sockaddr *addr, size_t addrsize, char *hostn
     defined (__APPLE__) || defined (__OpenBSD__) || \
     defined(__NetBSD__) || defined(__FreeBSD__) || \
     (defined(__hpux) && defined(_XOPEN_SOURCE_EXTENDED)) || \
-    defined (__HAIKU__) || defined(__CYGWIN__)
+    defined (__HAIKU__) || defined(__CYGWIN__) || \
+    defined (__EMSCRIPTEN__)
 socklen_t size = (socklen_t)addrsize;
 #elif defined (_WIN32) || defined (__EMX__) || \
      (defined (__ALPHA) && defined (__unix__)) || \
@@ -1334,7 +1337,8 @@ struct sockaddr_storage sockname, peername;
     defined (__APPLE__) || defined (__OpenBSD__) || \
     defined(__NetBSD__) || defined(__FreeBSD__) || \
     (defined(__hpux) && defined(_XOPEN_SOURCE_EXTENDED)) || \
-    defined (__HAIKU__) || defined(__CYGWIN__)
+    defined (__HAIKU__) || defined(__CYGWIN__) || \
+    defined (__EMSCRIPTEN__)
 socklen_t socknamesize = (socklen_t)sizeof(sockname);
 socklen_t peernamesize = (socklen_t)sizeof(peername);
 #elif defined (_WIN32) || defined (__EMX__) || \

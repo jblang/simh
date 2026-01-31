@@ -130,7 +130,7 @@ extern "C" {
 #endif
 
 /* USE_SHARED implies shared pcap, so force HAVE_PCAP_NETWORK */
-#if defined(USE_SHARED) && !defined(HAVE_PCAP_NETWORK)
+#if defined(USE_SHARED) && !defined(HAVE_PCAP_NETWORK) && !defined(__EMSCRIPTEN__)
 #define HAVE_PCAP_NETWORK 1
 #endif
 
