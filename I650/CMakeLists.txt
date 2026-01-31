@@ -22,6 +22,7 @@ add_simulator(i650
         i650_dsk.c
         i650_mt.c
         i650_sys.c
+        ${CMAKE_SOURCE_DIR}/simh_api.c
     INCLUDES
         ${CMAKE_CURRENT_SOURCE_DIR}
     FEATURE_INT64

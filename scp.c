@@ -599,6 +599,9 @@ const char *sim_vm_step_unit = "instruction";           /* Simulator can change 
 int32 sim_switches = 0;
 int32 sim_switch_number = 0;
 FILE *sim_ofile = NULL;
+#ifdef __EMSCRIPTEN__
+int simh_skip_cmdloop = 0;
+#endif
 TMLN *sim_oline = NULL;
 MEMFILE *sim_mfile = NULL;
 SCHTAB *sim_schrptr = FALSE;
@@ -2972,6 +2975,9 @@ if (docmdp) {
 if (SCPE_BARE_STATUS(stat) == SCPE_OPENERR)             /* didn't exist/can't open? */
     stat = SCPE_OK;
 if (SCPE_BARE_STATUS(stat) != SCPE_EXIT)
+#ifdef __EMSCRIPTEN__
+    if (!simh_skip_cmdloop)
+#endif
     process_stdin_commands (SCPE_BARE_STATUS(stat), argv, FALSE);
 
 cleanup_and_exit:
@@ -9165,7 +9171,11 @@ UNIT *uptr;
 if (sim_runlimit_enabled &&                             /* If the run limit has been hit? */
     (!sim_is_active (&sim_runlimit_unit))) {
     sim_messagef (SCPE_RUNTIME, "Execution limit exceeded, can't proceed.  Exiting...\n");
+#ifdef __EMSCRIPTEN__
+    return SCPE_RUNTIME;                                /* Return error instead of exit() in WASM */
+#else
     exit (SCPE_RUNTIME);                                /* Execution can't proceed */
+#endif
     }
 GET_SWITCHES (cptr);                                    /* get switches */
 sim_step = 0;

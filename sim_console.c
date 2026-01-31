@@ -150,10 +150,6 @@
 #include <ctype.h>
 #include <math.h>
 
-#ifdef __EMSCRIPTEN__
-#include <emscripten.h>
-#endif
-
 #ifdef __HAIKU__
 #define nice(n) ({})
 #endif
@@ -3881,21 +3877,8 @@ sim_debug (DBG_TRC, &sim_con_telnet, "sim_os_poll_kbd() - BSDTTY\n");
 
 status = read (0, buf, 1);
 #if defined(__EMSCRIPTEN__)
-/* Emscripten's stdin NEVER blocks - read() always returns immediately.
-   We must explicitly yield to let the event loop process keyboard input. */
+/* No interactive stdin in WASM mode — return immediately. */
 if (status != 1) {
-    if (status == 0 && !isatty(0)) {
-        /* EOF on non-interactive stdin */
-        return SCPE_EXIT;
-    }
-    /* No input available - sleep to yield to event loop using inline JS.
-       This requires ASYNCIFY to actually pause execution. */
-    EM_ASM({
-        var start = Date.now();
-        Asyncify.handleSleep(function(wakeUp) {
-            setTimeout(wakeUp, 50);
-        });
-    });
     return SCPE_OK;
 }
 #else
