@@ -33,7 +33,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
     -s MODULARIZE=1 \
     -s EXPORT_NAME=createI650Module \
     -s ASYNCIFY=1 \
-    -s EXPORTED_FUNCTIONS=['_simh_init','_simh_cmd','_simh_step','_simh_stop','_simh_is_running','_simh_is_busy','_simh_get_yield_steps','_simh_set_yield_steps','_main'] \
+    -s EXPORTED_FUNCTIONS=['_simh_init','_simh_cmd','_simh_step','_simh_stop','_simh_is_running','_simh_is_busy','_simh_get_yield_steps','_simh_set_yield_steps','_simh_get_yield_enabled','_simh_set_yield_enabled','_main'] \
     -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','FS'] \
     -s ALLOW_MEMORY_GROWTH=1 \
     -s ALLOW_TABLE_GROWTH=1 \

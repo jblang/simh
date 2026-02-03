@@ -189,4 +189,22 @@ if (steps > 100000)
 simh_yield_steps = steps;
 }
 
+/*
+ * simh_get_yield_enabled — Returns 1 if yielding is enabled.
+ */
+EMSCRIPTEN_KEEPALIVE
+int simh_get_yield_enabled (void)
+{
+return simh_yield_enabled ? 1 : 0;
+}
+
+/*
+ * simh_set_yield_enabled — Enable or disable yielding during long runs.
+ */
+EMSCRIPTEN_KEEPALIVE
+void simh_set_yield_enabled (int enabled)
+{
+simh_yield_enabled = enabled ? 1 : 0;
+}
+
 #endif /* __EMSCRIPTEN__ */
