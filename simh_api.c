@@ -20,10 +20,18 @@ extern int main (int argc, char *argv[]);
 /* Declared in scp.c — when set, main() skips process_stdin_commands(). */
 extern int simh_skip_cmdloop;
 
+/* Yield configuration for cooperative run loop slices (in scp.c). */
+int simh_yield_enabled = 1;
+int simh_yield_steps = 100;
+volatile t_bool simh_stop_requested = FALSE;
+volatile t_bool simh_cmd_active = FALSE;
+
 /* SIMH globals we need access to */
 extern int32        sim_step;
 extern volatile t_bool sim_is_running;
 extern volatile t_bool stop_cpu;
+extern volatile t_bool simh_stop_requested;
+extern volatile t_bool simh_cmd_active;
 extern int32        sim_switches;
 extern t_stat       sim_instr (void);
 extern CONST char  *get_glyph_cmd (const char *iptr, char *optr);
@@ -63,9 +71,17 @@ int simh_cmd (const char *cmd_line)
 char cbuf[4*CBUFSIZE], gbuf[CBUFSIZE];
 CONST char *cptr;
 CTAB *cmdp;
+t_stat stat;
+t_stat bare;
+int nomessage;
 
 if (!cmd_line || !*cmd_line)
     return SCPE_ARG;
+
+#ifdef __EMSCRIPTEN__
+/* Clear any stale stop request before starting a new top-level command. */
+simh_stop_requested = FALSE;
+#endif
 
 strncpy (cbuf, cmd_line, sizeof(cbuf) - 1);
 cbuf[sizeof(cbuf) - 1] = '\0';
@@ -74,10 +90,19 @@ cptr = get_glyph_cmd (cbuf, gbuf);
 sim_switches = 0;
 
 cmdp = find_cmd (gbuf);
-if (!cmdp)
+if (!cmdp) {
+    sim_printf ("%s\n", sim_error_text (SCPE_UNK));
     return SCPE_UNK;
+    }
 
-return (int) cmdp->action (cmdp->arg, cptr);
+simh_cmd_active = TRUE;
+stat = cmdp->action (cmdp->arg, cptr);
+simh_cmd_active = FALSE;
+nomessage = (stat & SCPE_NOMESSAGE) != 0;
+bare = SCPE_BARE_STATUS (stat);
+if (!nomessage && (bare >= SCPE_BASE) && (bare != SCPE_EXPECT))
+    sim_printf ("%s\n", sim_error_text (bare));
+return (int) stat;
 }
 
 /*
@@ -121,6 +146,47 @@ EMSCRIPTEN_KEEPALIVE
 void simh_stop (void)
 {
 stop_cpu = TRUE;
+simh_stop_requested = TRUE;
+}
+
+/*
+ * simh_is_running — Returns 1 if the CPU is currently running.
+ */
+EMSCRIPTEN_KEEPALIVE
+int simh_is_running (void)
+{
+return sim_is_running ? 1 : 0;
+}
+
+/*
+ * simh_is_busy — Returns 1 if the emulator is executing a command or running CPU.
+ */
+EMSCRIPTEN_KEEPALIVE
+int simh_is_busy (void)
+{
+return (sim_is_running || simh_cmd_active) ? 1 : 0;
+}
+
+/*
+ * simh_get_yield_steps — Returns the current yield step count.
+ */
+EMSCRIPTEN_KEEPALIVE
+int simh_get_yield_steps (void)
+{
+return simh_yield_steps;
+}
+
+/*
+ * simh_set_yield_steps — Configure how many instructions run per yield slice.
+ */
+EMSCRIPTEN_KEEPALIVE
+void simh_set_yield_steps (int steps)
+{
+if (steps < 1)
+    steps = 1;
+if (steps > 100000)
+    steps = 100000;
+simh_yield_steps = steps;
 }
 
 #endif /* __EMSCRIPTEN__ */

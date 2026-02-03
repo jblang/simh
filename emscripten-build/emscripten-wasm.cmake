@@ -32,7 +32,8 @@ set(CMAKE_EXECUTABLE_SUFFIX_CXX ".js")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
     -s MODULARIZE=1 \
     -s EXPORT_NAME=createI650Module \
-    -s EXPORTED_FUNCTIONS=['_simh_init','_simh_cmd','_simh_step','_simh_stop','_main'] \
+    -s ASYNCIFY=1 \
+    -s EXPORTED_FUNCTIONS=['_simh_init','_simh_cmd','_simh_step','_simh_stop','_simh_is_running','_simh_is_busy','_simh_get_yield_steps','_simh_set_yield_steps','_main'] \
     -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','FS'] \
     -s ALLOW_MEMORY_GROWTH=1 \
     -s ALLOW_TABLE_GROWTH=1 \
@@ -43,5 +44,5 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
     --preload-file ${CMAKE_SOURCE_DIR}/I650/sw@/sw \
     --preload-file ${CMAKE_SOURCE_DIR}/I650/tests@/tests" CACHE STRING "Emscripten linker flags" FORCE)
 
-message(STATUS "Using emscripten-wasm toolchain (MODULARIZE, no ASYNCIFY, preloaded filesystem)")
+message(STATUS "Using emscripten-wasm toolchain (MODULARIZE, ASYNCIFY, preloaded filesystem)")
 message(STATUS "Executables will have .js suffix")

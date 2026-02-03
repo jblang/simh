@@ -235,6 +235,12 @@
 #include "sim_video.h"
 #include "sim_sock.h"
 #include "sim_frontpanel.h"
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+extern int simh_yield_enabled;
+extern int simh_yield_steps;
+extern volatile t_bool simh_stop_requested;
+#endif
 #include <signal.h>
 #include <ctype.h>
 #include <time.h>
@@ -4171,6 +4177,14 @@ if (strcasecmp (do_arg[0], "<stdin>") == 0) {
     }
 
 do {
+#ifdef __EMSCRIPTEN__
+    if (simh_yield_enabled)
+        emscripten_sleep(0);
+    if (simh_stop_requested) {
+        stat = SCPE_STOP;
+        break;
+        }
+#endif
     if (stop_cpu) {                                     /* SIGINT? */
         if (sim_on_actions[sim_do_depth][ON_SIGINT_ACTION]) {
             stop_cpu = FALSE;
@@ -4244,6 +4258,13 @@ do {
         case SCPE_AFAIL:
             staying = (sim_on_check[sim_do_depth] &&        /* if trap action defined */
                        sim_on_actions[sim_do_depth][stat]); /* use it, otherwise exit */
+            break;
+        case SCPE_STOP:
+#ifdef __EMSCRIPTEN__
+            if (sim_do_depth == 1)
+                simh_stop_requested = FALSE;
+            staying = FALSE;
+#endif
             break;
         case SCPE_EXIT:
             staying = FALSE;
@@ -9344,7 +9365,7 @@ if (signal (SIGTERM, int_handler) == SIG_ERR) {         /* set WRU */
 if (sim_step)                                           /* set step timer */
     sim_sched_step ();
 sim_activate_after (&sim_flush_unit, sim_flush_interval * 1000000);/* Enable periodic buffer flushing */
-stop_cpu = FALSE;
+stop_cpu = simh_stop_requested ? TRUE : FALSE;
 sim_is_running = TRUE;                                  /* flag running */
 fflush(stdout);                                         /* flush stdout */
 if (sim_log)                                            /* flush log if enabled */
@@ -9355,12 +9376,36 @@ sim_start_timer_services ();                            /* enable wall clock tim
 do {
     t_addr *addrs;
 
-    while (1) {
-        r = sim_instr();
-        if (r != SCPE_REMOTE)
+#ifdef __EMSCRIPTEN__
+    if (simh_yield_enabled && ((flag == RU_RUN) || (flag == RU_GO) || (flag == RU_CONT))) {
+        while (1) {
+            if (simh_stop_requested)
+                stop_cpu = TRUE;
+            if (simh_yield_steps > 0) {
+                sim_step = simh_yield_steps;
+                sim_sched_step ();
+                }
+            while (1) {
+                r = sim_instr();
+                if (r != SCPE_REMOTE)
+                    break;
+                sim_remote_process_command ();          /* Process the command and resume processing */
+                }
+            if ((r == SCPE_STEP) && (!stop_cpu)) {
+                emscripten_sleep(0);
+                continue;
+                }
             break;
-        sim_remote_process_command ();                  /* Process the command and resume processing */
+            }
         }
+    else
+#endif
+        while (1) {
+            r = sim_instr();
+            if (r != SCPE_REMOTE)
+                break;
+            sim_remote_process_command ();              /* Process the command and resume processing */
+            }
     if ((flag != RU_NEXT) ||                            /* done if not doing NEXT */
         (--sim_next <=0))
         break;
@@ -9411,6 +9456,9 @@ if ((SCPE_BARE_STATUS(r) == SCPE_STOP) &&               /* WRU exit from sim_ins
     (sim_on_actions[sim_do_depth][0] == NULL))
     sim_os_ms_sleep (sim_stop_sleep_ms);                /* wait a bit for SIGINT */
 sim_is_running = FALSE;                                 /* flag idle */
+#ifndef __EMSCRIPTEN__
+simh_stop_requested = FALSE;
+#endif
 sim_stop_timer_services ();                             /* disable wall clock timing */
 sim_ttcmd ();                                           /* restore console */
 sim_brk_clrall (BRK_TYP_DYN_STEPOVER);                  /* cancel any step/over subroutine breakpoints */
