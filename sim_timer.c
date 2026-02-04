@@ -1073,6 +1073,14 @@ sim_throttle_unit.action = &sim_throt_svc;
 sim_register_clock_unit_tmr (&SIM_INTERNAL_UNIT, SIM_INTERNAL_CLK);
 sim_idle_enab = FALSE;                                  /* init idle off */
 sim_idle_rate_ms = sim_os_ms_sleep_init ();             /* get OS timer rate */
+#if defined (__EMSCRIPTEN__)
+if (sim_idle_rate_ms == 0) {
+    /* Emscripten sleep can report 0ms in some browser/worker contexts. */
+    sim_idle_rate_ms = 1;
+    sim_os_sleep_min_ms = 1;
+    sim_os_sleep_inc_ms = 1;
+}
+#endif
 sim_set_rom_delay_factor (sim_get_rom_delay_factor ()); /* initialize ROM delay factor */
 
 sim_stop_time = clock_last = clock_start = sim_os_msec ();

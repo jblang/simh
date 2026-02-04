@@ -1,5 +1,5 @@
 # Custom Emscripten toolchain for SIMH WASM build.
-# Use with: cmake -DCMAKE_TOOLCHAIN_FILE=./emscripten-wasm.cmake ..
+# Use with: cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/emscripten-wasm.cmake ..
 
 # First, include the standard Emscripten toolchain
 set(EMSCRIPTEN_TOOLCHAIN_FILE "$ENV{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake")

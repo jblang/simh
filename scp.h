@@ -274,6 +274,7 @@ void _sim_debug_device (uint32 dbits, DEVICE* dptr, const char* fmt, ...) GCC_FM
 #endif
 void sim_flush_buffered_files (void);
 
+void fprint_stopped (FILE *st, t_stat v);
 void fprint_stopped_gen (FILE *st, t_stat v, REG *pc, DEVICE *dptr);
 #define SCP_HELP_FLAT   (1u << 31)       /* Force flat help when prompting is not possible */
 #define SCP_HELP_ONECMD (1u << 30)       /* Display one topic, do not prompt */

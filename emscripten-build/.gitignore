@@ -1,6 +1,0 @@
-# Ignore all build artifacts
-*
-
-# Keep only the toolchain file
-!.gitignore
-!emscripten-wasm.cmake

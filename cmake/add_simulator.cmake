@@ -261,6 +261,13 @@ function (add_simulator _targ)
     simh_executable_template(${_targ} "${ARGN}")
     cmake_parse_arguments(SIMH "${ADD_SIMULATOR_OPTIONS}" "${ADD_SIMULATOR_1ARG}" "${ADD_SIMULATOR_NARG}" ${ARGN})
 
+    if (EMSCRIPTEN)
+        set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_CLEAN_FILES
+            "${SIMH_LEGACY_INSTALL}/${_targ}.wasm"
+            "${SIMH_LEGACY_INSTALL}/${_targ}.data"
+        )
+    endif ()
+
     set(pkg_family "default_family")
     if (SIMH_PKG_FAMILY)
         set(pkg_family ${SIMH_PKG_FAMILY})

@@ -9365,7 +9365,9 @@ if (signal (SIGTERM, int_handler) == SIG_ERR) {         /* set WRU */
 if (sim_step)                                           /* set step timer */
     sim_sched_step ();
 sim_activate_after (&sim_flush_unit, sim_flush_interval * 1000000);/* Enable periodic buffer flushing */
+#ifdef __EMSCRIPTEN__
 stop_cpu = simh_stop_requested ? TRUE : FALSE;
+#endif
 sim_is_running = TRUE;                                  /* flag running */
 fflush(stdout);                                         /* flush stdout */
 if (sim_log)                                            /* flush log if enabled */
@@ -9456,7 +9458,7 @@ if ((SCPE_BARE_STATUS(r) == SCPE_STOP) &&               /* WRU exit from sim_ins
     (sim_on_actions[sim_do_depth][0] == NULL))
     sim_os_ms_sleep (sim_stop_sleep_ms);                /* wait a bit for SIGINT */
 sim_is_running = FALSE;                                 /* flag idle */
-#ifndef __EMSCRIPTEN__
+#ifdef __EMSCRIPTEN__
 simh_stop_requested = FALSE;
 #endif
 sim_stop_timer_services ();                             /* disable wall clock timing */

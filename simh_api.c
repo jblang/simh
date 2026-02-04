@@ -22,7 +22,7 @@ extern int simh_skip_cmdloop;
 
 /* Yield configuration for cooperative run loop slices (in scp.c). */
 int simh_yield_enabled = 1;
-int simh_yield_steps = 100;
+int simh_yield_steps = 1000;
 volatile t_bool simh_stop_requested = FALSE;
 volatile t_bool simh_cmd_active = FALSE;
 
@@ -100,8 +100,12 @@ stat = cmdp->action (cmdp->arg, cptr);
 simh_cmd_active = FALSE;
 nomessage = (stat & SCPE_NOMESSAGE) != 0;
 bare = SCPE_BARE_STATUS (stat);
-if (!nomessage && (bare >= SCPE_BASE) && (bare != SCPE_EXPECT))
-    sim_printf ("%s\n", sim_error_text (bare));
+if (!nomessage) {
+    if (cmdp->message)
+        cmdp->message (NULL, stat);
+    else if ((bare >= SCPE_BASE) && (bare != SCPE_EXPECT))
+        sim_printf ("%s\n", sim_error_text (bare));
+    }
 return (int) stat;
 }
 
@@ -133,6 +137,11 @@ stop_cpu = FALSE;
 r = sim_instr ();
 
 sim_is_running = FALSE;
+#ifdef __EMSCRIPTEN__
+if ((r != SCPE_STEP) && (r != SCPE_OK)) {
+    fprint_stopped (stdout, r);
+    }
+#endif
 return (int) r;
 }
 
