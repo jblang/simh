@@ -9379,14 +9379,13 @@ do {
     t_addr *addrs;
 
 #ifdef __EMSCRIPTEN__
-    if (simh_yield_enabled && ((flag == RU_RUN) || (flag == RU_GO) || (flag == RU_CONT))) {
+    if (simh_yield_enabled && ((flag == RU_RUN) || (flag == RU_GO) || (flag == RU_CONT)) &&
+        (simh_yield_steps >= 1)) {
         while (1) {
             if (simh_stop_requested)
                 stop_cpu = TRUE;
-            if (simh_yield_steps > 0) {
-                sim_step = simh_yield_steps;
-                sim_sched_step ();
-                }
+            sim_step = simh_yield_steps;
+            sim_sched_step ();
             while (1) {
                 r = sim_instr();
                 if (r != SCPE_REMOTE)

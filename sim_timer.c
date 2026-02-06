@@ -93,6 +93,9 @@
 #include "sim_defs.h"
 #include <ctype.h>
 #include <math.h>
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 #ifdef HAVE_WINMM
 #include <windows.h>
 #endif
@@ -137,6 +140,11 @@ if (msec <= tick_left)
     real_sim_idle_ms_sleep (tick_left);
 else
     real_sim_idle_ms_sleep (((msec + MS_MIN_GRANULARITY - 1) / MS_MIN_GRANULARITY) * MS_MIN_GRANULARITY);
+
+#ifdef __EMSCRIPTEN__
+if (msec > 0)
+    emscripten_sleep(0);
+#endif
 
 return (sim_os_msec () - start);
 }
@@ -326,6 +334,10 @@ return delta_ms;
 #else
 uint32 sim_idle_ms_sleep (unsigned int msec)
 {
+#ifdef __EMSCRIPTEN__
+if (msec > 0)
+    emscripten_sleep(0);
+#endif
 return sim_os_ms_sleep (msec);
 }
 #endif

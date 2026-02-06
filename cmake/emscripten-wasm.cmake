@@ -42,7 +42,8 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
     -s NO_EXIT_RUNTIME=1 \
     -s FORCE_FILESYSTEM=1 \
     --preload-file ${CMAKE_SOURCE_DIR}/I650/sw@/sw \
-    --preload-file ${CMAKE_SOURCE_DIR}/I650/tests@/tests" CACHE STRING "Emscripten linker flags" FORCE)
+    --preload-file ${CMAKE_SOURCE_DIR}/I650/tests@/tests \
+    --preload-file ${CMAKE_SOURCE_DIR}/I650/tests/.preload-stamp@/tests/.preload-stamp" CACHE STRING "Emscripten linker flags" FORCE)
 
 message(STATUS "Using emscripten-wasm toolchain (MODULARIZE, ASYNCIFY, preloaded filesystem)")
 message(STATUS "Executables will have .js suffix")

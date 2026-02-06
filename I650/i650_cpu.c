@@ -103,6 +103,9 @@
 */
 
 #include "i650_defs.h"
+#ifdef __EMSCRIPTEN__
+void simh_state_stream_push_i650(void);
+#endif
 
 #define UNIT_V_MSIZE    (UNIT_V_UF + 0)
 #define UNIT_MSIZE      (7 << UNIT_V_MSIZE)
@@ -1688,6 +1691,7 @@ sim_instr(void)
     int DA = 0;                                         // Data Address; addr of data to be used by current inst
 
     int MachineCycle, CpuStepsUsed, il, nInterlock, bInterLockWaitMsg, bFastMode;
+    int instruction_completed = 0;
 
     /* How CPU execution is simulated
 
@@ -1995,9 +1999,16 @@ sim_instr(void)
             // set AR to point to next instr
             AR = IA;
             // no more machine cycles
+            instruction_completed = 1;
         }
 
 end_of_cycle:
+#ifdef __EMSCRIPTEN__
+        if (instruction_completed) {
+            simh_state_stream_push_i650();
+            instruction_completed = 0;
+        }
+#endif
 
         if (instr_count != 0 && --instr_count == 0) {
             if (reason == 0) {
