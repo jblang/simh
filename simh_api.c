@@ -26,7 +26,7 @@ extern int simh_skip_cmdloop;
 
 /* Yield configuration for cooperative run loop slices (in scp.c). */
 int simh_yield_enabled = 1;
-int simh_yield_steps = 1000;
+int simh_yield_steps = 10000;
 volatile t_bool simh_stop_requested = FALSE;
 volatile t_bool simh_cmd_active = FALSE;
 

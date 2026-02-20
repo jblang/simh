@@ -508,6 +508,7 @@ t_stat show_break (FILE *st, DEVICE *dptr, UNIT *uptr, int32 flag, CONST char *c
 t_stat show_on (FILE *st, DEVICE *dptr, UNIT *uptr, int32 flag, CONST char *cptr);
 t_stat show_do (FILE *st, DEVICE *dptr, UNIT *uptr, int32 flag, CONST char *cptr);
 t_stat show_runlimit (FILE *st, DEVICE *dptr, UNIT *uptr, int32 flag, CONST char *cptr);
+t_stat show_yieldsteps (FILE *st, DEVICE *dptr, UNIT *uptr, int32 flag, CONST char *cptr);
 t_stat sim_show_send (FILE *st, DEVICE *dptr, UNIT *uptr, int32 flag, CONST char *cptr);
 t_stat sim_show_expect (FILE *st, DEVICE *dptr, UNIT *uptr, int32 flag, CONST char *cptr);
 t_stat show_device (FILE *st, DEVICE *dptr, int32 flag);
@@ -588,6 +589,7 @@ t_stat do_cmd_label (int32 flag, CONST char *cptr, CONST char *label);
 void int_handler (int signal);
 t_stat set_prompt (int32 flag, CONST char *cptr);
 t_stat set_runlimit (int32 flag, CONST char *cptr);
+t_stat set_yieldsteps (int32 flag, CONST char *cptr);
 t_stat sim_set_asynch (int32 flag, CONST char *cptr);
 static const char *_get_dbg_verb (uint32 dbits, DEVICE* dptr, UNIT *uptr);
 static t_stat sim_sanity_check_register_declarations (DEVICE **devices);
@@ -1174,6 +1176,20 @@ static const char simh_help1[] =
       " GO, RUN, CONTINUE, STEP or BOOT commands will cause the simulator to\n"
       " exit.  A previously defined RUNLIMIT can be cleared with the NORUNLIMIT\n"
       " command or the establishment of a new run limit.\n"
+#ifdef __EMSCRIPTEN__
+#define HLP_YIELDSTEPS    "*Commands Stopping_The_Simulator User_Specified_Stop_Conditions YIELDSTEPS"
+      "4YIELDSTEPS\n"
+      " Cooperative execution yielding in browser builds can be controlled with:\n\n"
+      "++SET YIELDSTEPS n\n"
+      "++SHOW YIELDSTEPS\n\n"
+      " YIELDSTEPS controls how many instructions execute between scheduler\n"
+      " yields while running GO, RUN, or CONTINUE.\n\n"
+      "  n=0 disables cooperative yielding during run commands.\n"
+      "  n>=1 yields after every n instructions.\n"
+      " Warning: setting YIELDSTEPS to 0 can leave the emulator unresponsive\n"
+      " for long periods of time, and possibly indefinitely if a program\n"
+      " enters an infinite loop.\n"
+#endif
        /***************** 80 character line width template *************************/
       "2Connecting and Disconnecting Devices\n"
       " Except for main memory and network devices, units are simulated as\n"
@@ -1567,6 +1583,9 @@ static const char simh_help1[] =
       "+SET <dev> DEBUG{=arg}       set device debug flags\n"
       "+SET <dev> NODEBUG={arg}     clear device debug flags\n"
       "+SET <dev> arg{,arg...}      set device parameters (see show modifiers)\n"
+#ifdef __EMSCRIPTEN__
+      "+SET YIELDSTEPS n            set cooperative run yield cadence\n"
+#endif
       "+SET <unit> ENABLED          enable unit\n"
       "+SET <unit> DISABLED         disable unit\n"
       "+SET <unit> arg{,arg...}     set unit parameters (see show modifiers)\n"
@@ -1611,6 +1630,9 @@ static const char simh_help2[] =
       "+sh{ow} on                   show on condition actions\n"
       "+sh{ow} do                   show do nesting state\n"
       "+sh{ow} runlimit             show execution limit states\n"
+#ifdef __EMSCRIPTEN__
+      "+sh{ow} yieldsteps           show cooperative run yield cadence\n"
+#endif
       "+h{elp} <dev> show           displays the device specific show commands\n"
       "++++++++                     available\n"
 #define HLP_SHOW_CONFIG         "*Commands SHOW"
@@ -2635,6 +2657,9 @@ static CTAB set_glob_tab[] = {
     { "PROMPT",     &set_prompt,                0, HLP_SET_PROMPT },
     { "RUNLIMIT",   &set_runlimit,              1, HLP_RUNLIMIT },
     { "NORUNLIMIT", &set_runlimit,              0, HLP_RUNLIMIT },
+#ifdef __EMSCRIPTEN__
+    { "YIELDSTEPS", &set_yieldsteps,            1, HLP_YIELDSTEPS },
+#endif
     { "NOAUTOSIZE", &sim_disk_set_noautosize,   1, HLP_NOAUTOSIZE },
     { NULL,         NULL,                       0 }
     };
@@ -2694,6 +2719,9 @@ static SHTAB show_glob_tab[] = {
     { "ON",             &show_on,                  -1, HLP_SHOW_ON },
     { "DO",             &show_do,                   0, HLP_SHOW_DO },
     { "RUNLIMIT",       &show_runlimit,             0, HLP_SHOW_RUNLIMIT },
+#ifdef __EMSCRIPTEN__
+    { "YIELDSTEPS",     &show_yieldsteps,           0, HLP_YIELDSTEPS },
+#endif
     { NULL,             NULL,                       0 }
     };
 
@@ -7949,6 +7977,34 @@ t_stat set_runlimit (int32 flag, CONST char *cptr)
 return runlimit_cmd (flag, cptr);
 }
 
+#ifdef __EMSCRIPTEN__
+t_stat set_yieldsteps (int32 flag, CONST char *cptr)
+{
+char gbuf[CBUFSIZE];
+int32 steps;
+t_stat r;
+
+if (flag == 0)
+    return sim_messagef (SCPE_ARG, "YIELDSTEPS cannot be disabled\n");
+
+cptr = get_glyph (cptr, gbuf, 0);
+if (gbuf[0] == '\0')
+    return sim_messagef (SCPE_ARG, "Missing argument: YIELDSTEPS expects a numeric value\n");
+
+steps = (int32) get_uint (gbuf, 10, INT_MAX, &r);
+if (r != SCPE_OK)
+    return sim_messagef (SCPE_ARG, "Invalid argument: %s\n", gbuf);
+if (*cptr)
+    return sim_messagef (SCPE_2MARG, "Too many arguments: %s\n", cptr);
+
+simh_yield_steps = steps;
+if (steps == 0) {
+    sim_messagef (SCPE_OK, "Warning: YIELDSTEPS=0 can leave the emulator unresponsive for long periods, possibly indefinitely if a program enters an infinite loop.\n");
+    }
+return SCPE_OK;
+}
+#endif
+
 t_stat show_runlimit (FILE *st, DEVICE *dptr, UNIT *uptr, int32 flag, CONST char *cptr)
 {
 if (sim_runlimit_enabled) {
@@ -7979,6 +8035,14 @@ else
     fprintf (st, "Run Limit Disabled\n");
 return SCPE_OK;
 }
+
+#ifdef __EMSCRIPTEN__
+t_stat show_yieldsteps (FILE *st, DEVICE *dptr, UNIT *uptr, int32 flag, CONST char *cptr)
+{
+fprintf (st, "%d\n", simh_yield_steps);
+return SCPE_OK;
+}
+#endif
 
 /* Reset devices start..end
 
