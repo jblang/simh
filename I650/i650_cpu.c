@@ -166,6 +166,8 @@ uint8               OV;                          /* Overflow flag */
 uint8               CSWProgStop     = 1;         /* Console programmed stop switch */
 uint8               CSWOverflowStop = 0;         /* Console stop on overflow switch */
 uint8 HalfCycle          = 0;                    // set to 0 for normal run, =1 to execute I-Half-cycle, =2 to execute D-half-cycle
+uint8 FrontPanelHalfCyclePhase = 1;              // 1=instruction half-cycle active, 2=data half-cycle active
+uint8 StopReason         = 0;                    // last stop reason for front-panel indicators
 int ProgStopFlag         = 0;                    // set to 1 if programmed stop was the previous inst executed
 int AccNegativeZeroFlag  = 0;                    // set to 1 if acc has a negative zero
 int DistNegativeZeroFlag = 0;                    // set to 1 if distributor has a negative zero
@@ -1691,7 +1693,6 @@ sim_instr(void)
     int DA = 0;                                         // Data Address; addr of data to be used by current inst
 
     int MachineCycle, CpuStepsUsed, il, nInterlock, bInterLockWaitMsg, bFastMode;
-    int instruction_completed = 0;
 
     /* How CPU execution is simulated
 
@@ -1737,6 +1738,7 @@ sim_instr(void)
     }
 
     reason = halt_cpu_requested = 0;
+    StopReason = 0;
 
     MachineCycle = CpuStepsUsed = 0;
     DrumAddr = 0;
@@ -1878,6 +1880,11 @@ sim_instr(void)
 
             AR = DA;    // allways trasnfer DA to AR even if drum will be not read. This is why
                         // all opcodes must have a valid DA address even if not used to read drum (eg SRT 0003 to shift)
+#ifdef __EMSCRIPTEN__
+            /* End of instruction half-cycle: AR now presents data address (DA). */
+            FrontPanelHalfCyclePhase = 2;
+            simh_state_stream_push_i650();
+#endif
 
 
             // simulates the machine working on half cycles
@@ -1998,17 +2005,14 @@ sim_instr(void)
             }
             // set AR to point to next instr
             AR = IA;
-            // no more machine cycles
-            instruction_completed = 1;
+#ifdef __EMSCRIPTEN__
+            /* End of data half-cycle: AR now presents instruction address (IA). */
+            FrontPanelHalfCyclePhase = 1;
+            simh_state_stream_push_i650();
+#endif
         }
 
 end_of_cycle:
-#ifdef __EMSCRIPTEN__
-        if (instruction_completed) {
-            simh_state_stream_push_i650();
-            instruction_completed = 0;
-        }
-#endif
 
         if (instr_count != 0 && --instr_count == 0) {
             if (reason == 0) {
@@ -2032,6 +2036,7 @@ end_of_cycle:
         fflush(cdp_unit[0].fileref);
     }
 
+    StopReason = (uint8) reason;
     /* Simulation halted */
     return reason;
 }
@@ -2048,6 +2053,8 @@ cpu_reset(DEVICE * dptr)
     AccNegativeZeroFlag = 0;
     DistNegativeZeroFlag = 0;
     IC = 0;
+    FrontPanelHalfCyclePhase = 1;
+    StopReason = 0;
     IAS_TimingRing = 0;
     IR[0] = IR[1] = IR[2] = 0;
 

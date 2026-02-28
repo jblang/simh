@@ -64,6 +64,8 @@ extern t_int64          IAS[60];
 extern int              IAS_NegativeZeroFlag[60];
 extern int              IAS_TimingRing;
 extern int              InterLockCount[8];
+extern uint8            FrontPanelHalfCyclePhase;
+extern uint8            StopReason;
 
 extern int WriteAddr(int AR, t_int64 d, int NegZero);
 extern int ReadAddr(int AR, t_int64 * d, int * NegZero);
